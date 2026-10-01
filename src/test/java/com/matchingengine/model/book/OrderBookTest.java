@@ -1,12 +1,14 @@
 package com.matchingengine.book;
 
 import com.matchingengine.model.Order;
+import com.matchingengine.model.OrderStatus;
 import com.matchingengine.model.Side;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.util.concurrent.ConcurrentLinkedQueue;
 
+import static org.junit.Assert.assertNull;
 import static org.junit.jupiter.api.Assertions.*;
 
 class OrderBookTest {
@@ -57,5 +59,39 @@ class OrderBookTest {
         
         // First order inserted must be polled first
         assertEquals(firstOrder, queueAt15000.peek());
+    }
+
+
+    @Test
+    @DisplayName("Should cancel pending order in O(1) and update order status")
+    void testCancelOrderSuccess() {
+        OrderBook book = new OrderBook("AAPL");
+        Order order = new Order(201L, Side.BUY, 10000L, 50L);
+
+        book.addOrder(order);
+        assertNotNull(book.getOrder(201L));
+
+        boolean cancelled = book.cancelOrder(201L);
+        assertTrue(cancelled);
+        assertEquals(OrderStatus.CANCELLED, order.getStatus());
+        assertNull(book.getOrder(201L)); // Removed from fast lookup map
+    }
+
+    @Test
+    @DisplayName("Should return false when attempting to cancel non-existent or previously cancelled order")
+    void testCancelOrderFailure() {
+        OrderBook book = new OrderBook("AAPL");
+        Order order = new Order(202L, Side.SELL, 15000L, 20L);
+
+        book.addOrder(order);
+
+        // First cancellation succeeds
+        assertTrue(book.cancelOrder(202L));
+
+        // Second cancellation on same ID fails
+        assertFalse(book.cancelOrder(202L));
+
+        // Cancelling non-existent ID fails
+        assertFalse(book.cancelOrder(9999L));
     }
 }

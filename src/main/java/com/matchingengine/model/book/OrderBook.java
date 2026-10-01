@@ -104,4 +104,44 @@ public class OrderBook {
     public ConcurrentSkipListMap<Long, ConcurrentLinkedQueue<Order>> getAsks() {
         return asks;
     }
+
+    /**
+     * Helper method to prune empty price level queues from the SkipListMap 
+     * to keep memory footprint compact and iteration speeds high.
+     */
+    private void cleanEmptyPriceLevel(Order order) {
+        ConcurrentSkipListMap<Long, ConcurrentLinkedQueue<Order>> targetSideMap =
+            (order.getSide() == Side.BUY) ? bids : asks;
+
+        ConcurrentLinkedQueue<Order> queue = targetSideMap.get(order.getPrice());
+        if (queue != null && queue.isEmpty()) {
+            // Remove price level atomically if queue is still empty
+            targetSideMap.remove(order.getPrice(), queue);
+        }
+    }
+
+
+
+    /**
+     * Cancels an order in O(1) time using fast-path hash map lookup.
+     * The order status is atomically set to CANCELLED, and the order is removed from the lookup map.
+     * Physical removal from the queue happens lazily during matching execution.
+     *
+     * @param orderId ID of the order to cancel
+     * @return true if order was successfully cancelled, false if order not found or already filled/cancelled
+     */
+    public boolean cancelOrder(long orderId) {
+        Order order = orderLookup.get(orderId);
+        if (order == null) {
+            return false; // Order not found or already removed
+        }
+
+        // Atomically flip state to CANCELLED via CAS primitive
+        boolean cancelled = order.cancel();
+        if (cancelled) {
+            orderLookup.remove(orderId);
+            cleanEmptyPriceLevel(order);
+        }
+        return cancelled;
+    }
 }
