@@ -1,8 +1,10 @@
 package com.matchingengine.book;
 
+import com.matchingengine.book.OrderBook;
 import com.matchingengine.model.Order;
 import com.matchingengine.model.OrderStatus;
 import com.matchingengine.model.Side;
+
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 

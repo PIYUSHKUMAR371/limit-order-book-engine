@@ -1,10 +1,12 @@
 package com.matchingengine.engine;
 
 import com.matchingengine.book.OrderBook;
+import com.matchingengine.engine.MatchingEngine;
 import com.matchingengine.model.Order;
 import com.matchingengine.model.OrderStatus;
 import com.matchingengine.model.Side;
 import com.matchingengine.model.Trade;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
